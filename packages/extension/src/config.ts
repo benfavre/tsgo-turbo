@@ -41,10 +41,13 @@ export class ConfigManager implements vscode.Disposable {
 
     const ws = vscode.workspace.getConfiguration('tsgoTurbo');
 
+    const tsgoBinaryPath = ws.get<string>('tsgo.binaryPath', '').trim();
+    const oxcBinaryPath = ws.get<string>('oxc.binaryPath', '').trim();
+    const oxcConfigPath = ws.get<string>('oxc.configPath', '').trim();
+
     const config: TsgoTurboConfig = {
       tsgo: {
         enabled: ws.get<boolean>('tsgo.enabled', DEFAULT_CONFIG.tsgo.enabled),
-        binaryPath: ws.get<string>('tsgo.binaryPath', '') || undefined,
         maxTypeDepth: ws.get<number>('tsgo.maxTypeDepth', DEFAULT_CONFIG.tsgo.maxTypeDepth),
         fileTimeoutMs: ws.get<number>('tsgo.fileTimeoutMs', DEFAULT_CONFIG.tsgo.fileTimeoutMs),
         maxMemoryMb: ws.get<number>('tsgo.maxMemoryMb', DEFAULT_CONFIG.tsgo.maxMemoryMb),
@@ -52,8 +55,6 @@ export class ConfigManager implements vscode.Disposable {
       },
       oxc: {
         enabled: ws.get<boolean>('oxc.enabled', DEFAULT_CONFIG.oxc.enabled),
-        binaryPath: ws.get<string>('oxc.binaryPath', '') || undefined,
-        configPath: ws.get<string>('oxc.configPath', '') || undefined,
         fileTimeoutMs: ws.get<number>('oxc.fileTimeoutMs', DEFAULT_CONFIG.oxc.fileTimeoutMs),
       },
       logging: {
@@ -88,6 +89,16 @@ export class ConfigManager implements vscode.Disposable {
     config.cache.maxEntries = Math.max(1, Math.min(100_000, config.cache.maxEntries));
     config.cache.maxSizeMb = Math.max(1, Math.min(4096, config.cache.maxSizeMb));
     config.watch.debounceMs = Math.max(0, Math.min(5000, config.watch.debounceMs));
+
+    if (tsgoBinaryPath.length > 0) {
+      config.tsgo.binaryPath = tsgoBinaryPath;
+    }
+    if (oxcBinaryPath.length > 0) {
+      config.oxc.binaryPath = oxcBinaryPath;
+    }
+    if (oxcConfigPath.length > 0) {
+      config.oxc.configPath = oxcConfigPath;
+    }
 
     this.cachedConfig = config;
     return config;
