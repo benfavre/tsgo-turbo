@@ -523,8 +523,10 @@ class TsgoTurboServer {
         activeOperations: this.bridge?.activeCount ?? 0,
         queuedOperations: this.bridge?.queueSize ?? 0,
       });
-    } catch {
-      // Swallow — status updates are best-effort
+    } catch (err) {
+      this.logger.debug('Failed to send status update', {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 

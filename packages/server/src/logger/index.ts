@@ -177,10 +177,23 @@ export class Logger {
     return this.structured.queryRecent(minLevel ?? 'trace');
   }
 
+  /**
+   * Log a message with an associated performance span id for correlation.
+   */
+  logWithSpan(
+    level: LogLevel,
+    message: string,
+    spanId: string,
+    context?: Record<string, unknown>,
+  ): void {
+    this.log(level, message, context, spanId);
+  }
+
   private log(
     level: LogLevel,
     message: string,
     context?: Record<string, unknown>,
+    spanId?: string,
   ): void {
     if (this.disposed) {
       return;
@@ -195,6 +208,7 @@ export class Logger {
       message,
       context: { ...this.baseContext, ...context },
       source: this.source,
+      spanId,
     };
 
     this.structured.append(entry);
@@ -242,6 +256,12 @@ export class Logger {
 
   private setupFileLogging(filePath: string): void {
     try {
+      // Close existing stream if present to prevent resource leaks
+      if (this.logFileStream) {
+        this.logFileStream.end();
+        this.logFileStream = undefined;
+      }
+
       const dir = path.dirname(filePath);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });

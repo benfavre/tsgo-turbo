@@ -120,8 +120,11 @@ export function registerCommands(
                   CustomMethods.analyzeFile,
                   params,
                 );
-              } catch {
-                // Individual file failures should not abort the whole run
+              } catch (fileErr) {
+                logger.debug('File analysis failed', {
+                  uri: file.toString(),
+                  error: String(fileErr),
+                });
               }
 
               completed++;

@@ -227,6 +227,25 @@ export class OxcIntegration {
   }
 
   /**
+   * Convert a byte offset in file content to a line/column position.
+   * Both line and column are 1-based.
+   */
+  private byteOffsetToPosition(
+    content: string,
+    byteOffset: number,
+  ): { line: number; column: number } {
+    const buf = Buffer.from(content, 'utf-8');
+    // Clamp to content length
+    const offset = Math.min(byteOffset, buf.length);
+    const prefix = buf.subarray(0, offset).toString('utf-8');
+    const lines = prefix.split('\n');
+    return {
+      line: lines.length,
+      column: (lines[lines.length - 1]?.length ?? 0) + 1,
+    };
+  }
+
+  /**
    * Execute a lint operation for a single file.
    */
   private async executeLint(
@@ -268,7 +287,7 @@ export class OxcIntegration {
       const output = await this.runOxcWithStdin(args, content);
       const analysisTimeMs = Date.now() - startTime;
 
-      const diagnostics = this.parseOutput(uri, output, analysisTimeMs);
+      const diagnostics = this.parseOutput(uri, output, analysisTimeMs, content);
 
       return {
         uri,
@@ -422,16 +441,29 @@ export class OxcIntegration {
     uri: string,
     output: string,
     computeTimeMs: number,
+    content?: string,
   ): TurbodiagnosticItem[] {
     if (!output.trim()) {
       return [];
     }
 
     try {
-      const raw = JSON.parse(output) as OxcRawDiagnostic[] | OxcRawDiagnostic;
-      const items = Array.isArray(raw) ? raw : [raw];
+      const parsed: unknown = JSON.parse(output);
+      // Validate that parsed output is an object or array of objects
+      const raw = Array.isArray(parsed) ? parsed : [parsed];
+      const items = raw.filter(
+        (d): d is OxcRawDiagnostic =>
+          typeof d === 'object' && d !== null && 'message' in d,
+      );
 
-      return items.map((d) => this.convertDiagnostic(uri, d, computeTimeMs));
+      if (items.length === 0 && raw.length > 0) {
+        this.logger.debug('oxc output had no valid diagnostics', {
+          rawCount: raw.length,
+        });
+        return [];
+      }
+
+      return items.map((d) => this.convertDiagnostic(uri, d, computeTimeMs, content));
     } catch {
       // If JSON parsing fails, try to parse line-by-line or return empty
       this.logger.debug('Failed to parse oxc JSON output, trying fallback', {
@@ -448,6 +480,7 @@ export class OxcIntegration {
     uri: string,
     raw: OxcRawDiagnostic,
     computeTimeMs: number,
+    content?: string,
   ): TurbodiagnosticItem {
     const ruleId = raw.rule_id ?? raw.ruleId;
 
@@ -465,12 +498,16 @@ export class OxcIntegration {
       endLine = raw.end.line;
       endColumn = raw.end.column;
     }
-    if (raw.labels && raw.labels.length > 0) {
-      // Labels provide more precise span info
+    if (raw.labels && raw.labels.length > 0 && content) {
+      // Labels provide more precise span info via byte offsets
       const label = raw.labels[0];
       if (label.span) {
-        // Byte spans need file content to convert to line/column
-        // For now, use them as approximate values
+        const startPos = this.byteOffsetToPosition(content, label.span.start);
+        line = startPos.line;
+        column = startPos.column;
+        const endPos = this.byteOffsetToPosition(content, label.span.end);
+        endLine = endPos.line;
+        endColumn = endPos.column;
       }
     }
 

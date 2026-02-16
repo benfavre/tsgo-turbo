@@ -80,6 +80,15 @@ export class ConfigManager implements vscode.Disposable {
       },
     };
 
+    // Clamp numeric values to valid ranges
+    config.tsgo.maxTypeDepth = Math.max(1, Math.min(500, config.tsgo.maxTypeDepth));
+    config.tsgo.fileTimeoutMs = Math.max(1000, Math.min(300_000, config.tsgo.fileTimeoutMs));
+    config.tsgo.maxMemoryMb = Math.max(256, Math.min(16_384, config.tsgo.maxMemoryMb));
+    config.oxc.fileTimeoutMs = Math.max(1000, Math.min(300_000, config.oxc.fileTimeoutMs));
+    config.cache.maxEntries = Math.max(1, Math.min(100_000, config.cache.maxEntries));
+    config.cache.maxSizeMb = Math.max(1, Math.min(4096, config.cache.maxSizeMb));
+    config.watch.debounceMs = Math.max(0, Math.min(5000, config.watch.debounceMs));
+
     this.cachedConfig = config;
     return config;
   }

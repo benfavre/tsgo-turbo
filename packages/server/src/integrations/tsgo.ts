@@ -9,6 +9,17 @@ import { IPC_MESSAGES } from '@tsgo-turbo/shared';
 import type { Logger } from '../logger/index.js';
 import { FileCache } from '../cache/fileCache.js';
 
+/** Interval (ms) between health check pings to idle tsgo processes. */
+const HEALTH_CHECK_INTERVAL_MS = 30_000;
+/** Interval (ms) between memory/liveness checks on tsgo processes. */
+const MEMORY_CHECK_INTERVAL_MS = 10_000;
+/** Default tsgo binary name when no binaryPath is configured. */
+const DEFAULT_BINARY = 'tsgo';
+/** Timeout (ms) for graceful shutdown before sending SIGKILL. */
+const FORCE_KILL_TIMEOUT_MS = 5_000;
+/** Delay (ms) between SIGTERM and SIGKILL during graceful shutdown. */
+const SIGTERM_GRACE_MS = 1_000;
+
 /**
  * Internal representation of a pooled tsgo child process.
  */
@@ -110,6 +121,7 @@ export class TsgoIntegration {
   private memoryCheckInterval: ReturnType<typeof setInterval> | undefined;
   private started = false;
   private shuttingDown = false;
+  private respawning = false;
 
   /**
    * @param config - tsgo section of TsgoTurboConfig
@@ -155,15 +167,13 @@ export class TsgoIntegration {
 
     this.started = true;
 
-    // Start health check (every 30s)
     this.healthCheckInterval = setInterval(() => {
       this.performHealthChecks();
-    }, 30_000);
+    }, HEALTH_CHECK_INTERVAL_MS);
 
-    // Start memory monitoring (every 10s)
     this.memoryCheckInterval = setInterval(() => {
       this.checkMemoryUsage();
-    }, 10_000);
+    }, MEMORY_CHECK_INTERVAL_MS);
 
     this.logger.info('tsgo process pool started', {
       activeProcesses: this.pool.length,
@@ -390,7 +400,7 @@ export class TsgoIntegration {
   }
 
   private spawnProcess(): TsgoProcess {
-    const binaryPath = this.config.binaryPath ?? 'tsgo';
+    const binaryPath = this.config.binaryPath ?? DEFAULT_BINARY;
     const args = ['--lsp-stdio', ...this.config.flags];
 
     this.logger.debug('Spawning tsgo process', { binaryPath, args });
@@ -418,12 +428,21 @@ export class TsgoIntegration {
     // Handle process exit — remove from pool and spawn replacement
     child.on('exit', (code, signal) => {
       this.logger.warn('tsgo process exited', { pid, code, signal });
+
+      // Clean up any active stdout listener for this process
+      if (tsgoProc.busy && child.stdout) {
+        child.stdout.removeAllListeners('data');
+        tsgoProc.busy = false;
+        tsgoProc.activeFile = undefined;
+      }
+
       const idx = this.pool.indexOf(tsgoProc);
       if (idx >= 0) {
         this.pool.splice(idx, 1);
       }
-      // Respawn if not shutting down
-      if (!this.shuttingDown && this.pool.length < this.poolSize) {
+      // Respawn if not shutting down (guard against concurrent respawns)
+      if (!this.shuttingDown && !this.respawning && this.pool.length < this.poolSize) {
+        this.respawning = true;
         try {
           const replacement = this.spawnProcess();
           this.pool.push(replacement);
@@ -436,6 +455,8 @@ export class TsgoIntegration {
           this.logger.error('Failed to respawn tsgo process', {
             error: err instanceof Error ? err.message : String(err),
           });
+        } finally {
+          this.respawning = false;
         }
       }
     });
@@ -647,7 +668,7 @@ export class TsgoIntegration {
           // Already dead
         }
         resolve();
-      }, 5000);
+      }, FORCE_KILL_TIMEOUT_MS);
 
       proc.process.once('exit', () => {
         clearTimeout(forceKillTimeout);
@@ -665,7 +686,7 @@ export class TsgoIntegration {
           } catch {
             // Already dead
           }
-        }, 1000);
+        }, SIGTERM_GRACE_MS);
       } catch {
         try {
           proc.process.kill('SIGKILL');

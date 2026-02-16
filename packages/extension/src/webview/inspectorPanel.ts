@@ -187,10 +187,7 @@ export class InspectorPanel implements vscode.Disposable {
         break;
 
       case 'analyzeFile': {
-        const uri = (msg.payload as { uri?: string })?.uri;
-        if (uri) {
-          await vscode.commands.executeCommand('tsgoTurbo.analyzeFile');
-        }
+        await vscode.commands.executeCommand('tsgoTurbo.analyzeFile');
         break;
       }
 
@@ -942,8 +939,8 @@ export class InspectorPanel implements vscode.Disposable {
       for (const d of filtered.slice(0, 500)) {
         const fileName = d.file.split('/').pop() || d.file;
         html += '<tr>'
-          + '<td><span class="severity ' + d.severity + '">' + d.severity + '</span></td>'
-          + '<td><span class="source-badge ' + d.source + '">' + d.source + '</span></td>'
+          + '<td><span class="severity ' + safeClass(d.severity) + '">' + escHtml(d.severity) + '</span></td>'
+          + '<td><span class="source-badge ' + safeClass(d.source) + '">' + escHtml(d.source) + '</span></td>'
           + '<td title="' + escHtml(d.file) + '">' + escHtml(fileName) + '</td>'
           + '<td class="mono">' + d.line + ':' + d.column + '</td>'
           + '<td>' + escHtml(d.message) + '</td>'
@@ -966,7 +963,7 @@ export class InspectorPanel implements vscode.Disposable {
         const uptime = formatUptime((Date.now() - p.startedAt) / 1000);
         const activeFile = p.activeFile ? p.activeFile.split('/').pop() : '--';
         html += '<tr>'
-          + '<td><span class="source-badge ' + p.tool + '">' + p.tool + '</span></td>'
+          + '<td><span class="source-badge ' + safeClass(p.tool) + '">' + escHtml(p.tool) + '</span></td>'
           + '<td class="mono">' + p.pid + '</td>'
           + '<td class="mono">' + p.memoryMb.toFixed(1) + '</td>'
           + '<td class="mono">' + p.cpuPercent.toFixed(1) + '</td>'
@@ -1038,6 +1035,12 @@ export class InspectorPanel implements vscode.Disposable {
       return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
+    /** Sanitize a value for use as a CSS class name — allow only [a-zA-Z0-9_-]. */
+    function safeClass(str) {
+      if (!str) return '';
+      return String(str).replace(/[^a-zA-Z0-9_-]/g, '');
+    }
+
     // ---- Initial request -------------------------------------------------
     send('refresh');
   </script>
@@ -1047,13 +1050,10 @@ export class InspectorPanel implements vscode.Disposable {
 }
 
 /**
- * Generate a random nonce string for the Content-Security-Policy.
+ * Generate a cryptographically secure random nonce string for CSP.
  */
 function getNonce(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = '';
-  for (let i = 0; i < 32; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }

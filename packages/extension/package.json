@@ -5,6 +5,14 @@
   "version": "0.1.0",
   "publisher": "tsgo-turbo",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/benfavre/tsgo-turbo"
+  },
+  "bugs": {
+    "url": "https://github.com/benfavre/tsgo-turbo/issues"
+  },
+  "homepage": "https://github.com/benfavre/tsgo-turbo#readme",
   "engines": {
     "vscode": "^1.96.0"
   },
@@ -16,7 +24,9 @@
     "onLanguage:typescript",
     "onLanguage:typescriptreact",
     "onLanguage:javascript",
-    "onLanguage:javascriptreact"
+    "onLanguage:javascriptreact",
+    "workspaceContains:**/*.mts",
+    "workspaceContains:**/*.cts"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -112,7 +122,9 @@
             "**/*.ts",
             "**/*.tsx",
             "**/*.js",
-            "**/*.jsx"
+            "**/*.jsx",
+            "**/*.mts",
+            "**/*.cts"
           ],
           "description": "Glob patterns to watch"
         },
@@ -186,9 +198,9 @@
     ]
   },
   "scripts": {
-    "build": "esbuild src/extension.ts --bundle --platform=node --target=node22 --outdir=dist --sourcemap --external:vscode",
-    "dev": "esbuild src/extension.ts --bundle --platform=node --target=node22 --outdir=dist --sourcemap --external:vscode --watch",
-    "clean": "rm -rf dist *.tsbuildinfo",
+    "build": "esbuild src/extension.ts --bundle --platform=node --target=node22 --outdir=dist --sourcemap --external:vscode --external:vscode-languageclient --external:vscode-languageclient/node.js",
+    "dev": "esbuild src/extension.ts --bundle --platform=node --target=node22 --outdir=dist --sourcemap --external:vscode --external:vscode-languageclient --external:vscode-languageclient/node.js --watch",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});require('fs').readdirSync('.').filter(f=>f.endsWith('.tsbuildinfo')).forEach(f=>require('fs').unlinkSync(f))\"",
     "typecheck": "tsc --noEmit",
     "package": "vsce package --no-dependencies"
   },

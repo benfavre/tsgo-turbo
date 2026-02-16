@@ -5,9 +5,9 @@
   "main": "./dist/server.js",
   "types": "./dist/server.d.ts",
   "scripts": {
-    "build": "esbuild src/server.ts --bundle --platform=node --target=node22 --outdir=dist --sourcemap --external:vscode",
-    "dev": "esbuild src/server.ts --bundle --platform=node --target=node22 --outdir=dist --sourcemap --external:vscode --watch",
-    "clean": "rm -rf dist *.tsbuildinfo",
+    "build": "esbuild src/server.ts --bundle --platform=node --target=node22 --outdir=dist --sourcemap --external:vscode --external:vscode-languageserver --external:vscode-languageserver/node --external:vscode-languageserver-textdocument --external:vscode-uri",
+    "dev": "esbuild src/server.ts --bundle --platform=node --target=node22 --outdir=dist --sourcemap --external:vscode --external:vscode-languageserver --external:vscode-languageserver/node --external:vscode-languageserver-textdocument --external:vscode-uri --watch",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true});require('fs').readdirSync('.').filter(f=>f.endsWith('.tsbuildinfo')).forEach(f=>require('fs').unlinkSync(f))\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "lint": "oxlint src/"
@@ -22,6 +22,7 @@
     "typescript": "^5.8.0",
     "esbuild": "^0.25.0",
     "@types/node": "^22.0.0",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.0",
+    "oxlint": "^0.15.0"
   }
 }
