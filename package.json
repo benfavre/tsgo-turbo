@@ -1,0 +1,27 @@
+{
+  "name": "tsgo-turbo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "description": "High-performance VS Code extension with custom LSP server powered by tsgo and oxc-lint — built for massive Next.js + tRPC + Prisma codebases",
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "clean": "turbo clean",
+    "package": "cd packages/extension && vsce package --no-dependencies",
+    "typecheck": "turbo typecheck"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.0",
+    "typescript": "^5.8.0",
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.25.0",
+    "vitest": "^3.0.0"
+  },
+  "packageManager": "bun@1.2.0",
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

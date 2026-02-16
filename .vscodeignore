@@ -1,0 +1,12 @@
+.github/**
+packages/server/src/**
+packages/shared/src/**
+packages/extension/src/**
+**/node_modules/**
+**/tsconfig*.json
+**/*.ts
+**/*.map
+.turbo/**
+*.tsbuildinfo
+vitest.config.*
+coverage/**

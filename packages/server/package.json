@@ -1,0 +1,27 @@
+{
+  "name": "@tsgo-turbo/server",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/server.js",
+  "types": "./dist/server.d.ts",
+  "scripts": {
+    "build": "esbuild src/server.ts --bundle --platform=node --target=node22 --outdir=dist --sourcemap --external:vscode",
+    "dev": "esbuild src/server.ts --bundle --platform=node --target=node22 --outdir=dist --sourcemap --external:vscode --watch",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "oxlint src/"
+  },
+  "dependencies": {
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.12",
+    "vscode-uri": "^3.0.8",
+    "@tsgo-turbo/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "esbuild": "^0.25.0",
+    "@types/node": "^22.0.0",
+    "vitest": "^3.0.0"
+  }
+}

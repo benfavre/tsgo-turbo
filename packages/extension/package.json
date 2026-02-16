@@ -1,0 +1,206 @@
+{
+  "name": "tsgo-turbo",
+  "displayName": "tsgo Turbo",
+  "description": "High-performance TypeScript/JavaScript analysis powered by tsgo and oxc — built for massive codebases",
+  "version": "0.1.0",
+  "publisher": "tsgo-turbo",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters"
+  ],
+  "activationEvents": [
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact",
+    "onLanguage:javascript",
+    "onLanguage:javascriptreact"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "tsgo Turbo",
+      "properties": {
+        "tsgoTurbo.tsgo.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable tsgo type checking"
+        },
+        "tsgoTurbo.tsgo.binaryPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to tsgo binary (auto-detected if empty)"
+        },
+        "tsgoTurbo.tsgo.maxTypeDepth": {
+          "type": "number",
+          "default": 50,
+          "description": "Max type expansion depth — prevents infinite recursion with Prisma/tRPC types"
+        },
+        "tsgoTurbo.tsgo.fileTimeoutMs": {
+          "type": "number",
+          "default": 30000,
+          "description": "Timeout per file analysis in milliseconds"
+        },
+        "tsgoTurbo.tsgo.maxMemoryMb": {
+          "type": "number",
+          "default": 4096,
+          "description": "Max memory per tsgo process in MB"
+        },
+        "tsgoTurbo.oxc.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable oxc linting"
+        },
+        "tsgoTurbo.oxc.binaryPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to oxc binary"
+        },
+        "tsgoTurbo.oxc.configPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to oxc config file"
+        },
+        "tsgoTurbo.oxc.fileTimeoutMs": {
+          "type": "number",
+          "default": 10000,
+          "description": "Timeout per file lint in milliseconds"
+        },
+        "tsgoTurbo.logging.level": {
+          "type": "string",
+          "enum": [
+            "trace",
+            "debug",
+            "info",
+            "warn",
+            "error",
+            "fatal"
+          ],
+          "default": "info",
+          "description": "Log level"
+        },
+        "tsgoTurbo.logging.perfTracing": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable performance tracing"
+        },
+        "tsgoTurbo.logging.prettyPrint": {
+          "type": "boolean",
+          "default": true,
+          "description": "Pretty print logs in output channel"
+        },
+        "tsgoTurbo.cache.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable file analysis caching"
+        },
+        "tsgoTurbo.cache.maxEntries": {
+          "type": "number",
+          "default": 10000,
+          "description": "Max cache entries"
+        },
+        "tsgoTurbo.cache.maxSizeMb": {
+          "type": "number",
+          "default": 512,
+          "description": "Max cache size in MB"
+        },
+        "tsgoTurbo.watch.include": {
+          "type": "array",
+          "default": [
+            "**/*.ts",
+            "**/*.tsx",
+            "**/*.js",
+            "**/*.jsx"
+          ],
+          "description": "Glob patterns to watch"
+        },
+        "tsgoTurbo.watch.exclude": {
+          "type": "array",
+          "default": [
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/.next/**"
+          ],
+          "description": "Glob patterns to exclude"
+        },
+        "tsgoTurbo.watch.debounceMs": {
+          "type": "number",
+          "default": 150,
+          "description": "Debounce delay for file changes"
+        },
+        "tsgoTurbo.inspector.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable inspector panel"
+        },
+        "tsgoTurbo.inspector.autoOpen": {
+          "type": "boolean",
+          "default": false,
+          "description": "Auto-open inspector on errors"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "tsgoTurbo.showInspector",
+        "title": "tsgo Turbo: Open Inspector Panel"
+      },
+      {
+        "command": "tsgoTurbo.analyzeFile",
+        "title": "tsgo Turbo: Analyze Current File"
+      },
+      {
+        "command": "tsgoTurbo.analyzeWorkspace",
+        "title": "tsgo Turbo: Analyze Workspace"
+      },
+      {
+        "command": "tsgoTurbo.clearCache",
+        "title": "tsgo Turbo: Clear Cache"
+      },
+      {
+        "command": "tsgoTurbo.showLogs",
+        "title": "tsgo Turbo: Show Output Logs"
+      },
+      {
+        "command": "tsgoTurbo.restartServer",
+        "title": "tsgo Turbo: Restart LSP Server"
+      },
+      {
+        "command": "tsgoTurbo.showTypeExpansion",
+        "title": "tsgo Turbo: Show Type Expansion at Cursor"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "tsgoTurbo.showInspector",
+        "key": "ctrl+shift+i",
+        "mac": "cmd+shift+i"
+      },
+      {
+        "command": "tsgoTurbo.analyzeFile",
+        "key": "ctrl+shift+a",
+        "mac": "cmd+shift+a"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "esbuild src/extension.ts --bundle --platform=node --target=node22 --outdir=dist --sourcemap --external:vscode",
+    "dev": "esbuild src/extension.ts --bundle --platform=node --target=node22 --outdir=dist --sourcemap --external:vscode --watch",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "typecheck": "tsc --noEmit",
+    "package": "vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1",
+    "@tsgo-turbo/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "@types/vscode": "^1.96.0",
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.25.0",
+    "@vscode/vsce": "^3.0.0"
+  }
+}
