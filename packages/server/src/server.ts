@@ -644,7 +644,7 @@ class TsgoTurboServer {
     this.logger.info('Server shutting down');
 
     // Cancel all pending analyses
-    for (const [uri, timer] of this.analysisDebounceTimers) {
+    for (const [, timer] of this.analysisDebounceTimers) {
       clearTimeout(timer);
     }
     this.analysisDebounceTimers.clear();

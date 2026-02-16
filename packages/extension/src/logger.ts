@@ -68,8 +68,10 @@ export class ClientLogger implements vscode.Disposable {
       level,
       message,
       source: 'extension',
-      context,
     };
+    if (context) {
+      entry.context = context;
+    }
     const line = this.formatEntry(entry);
     this.channel.appendLine(line);
   }

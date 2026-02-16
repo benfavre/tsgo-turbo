@@ -23,7 +23,7 @@ export class LogRingBuffer {
   private count = 0;
 
   constructor(private readonly capacity: number) {
-    this.buffer = new Array(capacity);
+    this.buffer = Array.from<LogEntry | undefined>({ length: capacity });
   }
 
   /** Push a new entry into the ring buffer. Overwrites oldest if full. */

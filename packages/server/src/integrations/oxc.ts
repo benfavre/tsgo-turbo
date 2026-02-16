@@ -9,18 +9,6 @@ import type { Logger } from '../logger/index.js';
 import { FileCache } from '../cache/fileCache.js';
 
 /**
- * Internal representation of a pooled oxc child process.
- */
-interface OxcProcess {
-  process: ChildProcess;
-  pid: number;
-  busy: boolean;
-  activeFile: string | undefined;
-  startedAt: number;
-  requestCount: number;
-}
-
-/**
  * Raw JSON diagnostic from oxc lint output.
  * oxc outputs diagnostics in a JSON array when invoked with --format=json.
  */
